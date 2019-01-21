@@ -24,3 +24,5 @@ app.post('/cards', (req, res) => {
 app.listen(8080, () => {
   console.log('The magic happens on port 8080')
 })
+
+module.exports = { app }

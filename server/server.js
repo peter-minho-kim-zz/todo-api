@@ -21,6 +21,14 @@ app.post('/cards', (req, res) => {
   })
 })
 
+app.get('/cards', (req, res) => {
+  Card.find().then((cards) => {
+    res.send({ cards })
+  }, (err) => {
+    res.status(400).send(err)
+  })
+})
+
 app.listen(8080, () => {
   console.log('The magic happens on port 8080')
 })

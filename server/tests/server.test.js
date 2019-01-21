@@ -4,8 +4,15 @@ const request = require('supertest')
 const { app } = require('./../server')
 const { Card } = require('./../models/card')
 
+const cards = [
+  { text: 'first sample card' },
+  { text: 'second sample card' }
+]
+
 beforeEach((done) => {
-  Card.remove({}).then(() => done())
+  Card.remove({}).then(() => {
+    return Card.insertMany(cards)
+  }).then(() => done())
 })
 
 describe('POST /cards', () => {
@@ -24,7 +31,7 @@ describe('POST /cards', () => {
           return done(err)
         }
 
-        Card.find().then((cards) => {
+        Card.find({ text }).then((cards) => {
           expect(cards.length).toBe(1)
           expect(cards[0].text).toBe(text)
           done()
@@ -43,9 +50,21 @@ describe('POST /cards', () => {
         }
 
         Card.find().then((cards) => {
-          expect(cards.length).toBe(0)
+          expect(cards.length).toBe(2)
           done()
         }).catch((err) => done(err))
       })
+  })
+})
+
+describe('GET /cards', () => {
+  it('should get all cards', (done) => {
+    request(app)
+      .get('/cards')
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.cards.length).toBe(2)
+      })
+      .end(done)
   })
 })

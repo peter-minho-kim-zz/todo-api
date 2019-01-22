@@ -34,12 +34,12 @@ app.get('/cards/:id', (req, res) => {
   const id = req.params.id
 
   if (!ObjectID.isValid(id)) {
-    return res.status(400).send()
+    return res.status(404).send()
   }
 
   Card.findById(id).then((card) => {
     if (!card) {
-      return res.status(400).send()
+      return res.status(404).send()
     }
 
     res.send({ card })

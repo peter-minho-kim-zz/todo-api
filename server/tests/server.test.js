@@ -1,12 +1,19 @@
 const expect = require('expect')
 const request = require('supertest')
+const { ObjectID } = require('mongodb')
 
 const { app } = require('./../server')
 const { Card } = require('./../models/card')
 
 const cards = [
-  { text: 'first sample card' },
-  { text: 'second sample card' }
+  { 
+    _id: new ObjectID(),
+    text: 'first sample card' 
+  },
+  { 
+    _id: new ObjectID(),
+    text: 'second sample card' 
+  }
 ]
 
 beforeEach((done) => {
@@ -65,6 +72,34 @@ describe('GET /cards', () => {
       .expect((res) => {
         expect(res.body.cards.length).toBe(2)
       })
+      .end(done)
+  })
+})
+
+describe('GET /cards:id', () => {
+  it('should return card doc', (done) => {
+    request(app)
+      .get(`/cards/${cards[0]._id.toHexString()}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.card.text).toBe(cards[0].text)
+      })
+      .end(done)
+  })
+
+  it('should return 404 if card not found', (done) => {
+    const id = new ObjectID()
+    request(app)
+      .get(`/cards/${id}`)
+      .expect(404)
+      .end(done)
+  })
+
+  it('should return 404 for non-object ids', (done) => {
+    const id = 123
+    request(app)
+      .get(`/cards/${id}`)
+      .expect(404)
       .end(done)
   })
 })

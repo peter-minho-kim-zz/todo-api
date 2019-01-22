@@ -49,7 +49,7 @@ app.get('/cards/:id', (req, res) => {
   })
 })
 
-app.listen(8080, () => {
+app.listen(port, () => {
   console.log(`The magic happens on port ${port}`)
 })
 

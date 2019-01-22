@@ -12,7 +12,9 @@ const cards = [
   },
   { 
     _id: new ObjectID(),
-    text: 'second sample card' 
+    text: 'second sample card',
+    completed: true,
+    completedAt: 123 
   }
 ]
 
@@ -139,6 +141,46 @@ describe('DELETE /cards/:id', () => {
     request(app)
       .delete('/cards/123')
       .expect(404)
+      .end(done)
+  })
+})
+
+describe('PATCH /cards/:id', () => {
+  it('should updated the card', (done) => {
+    const id = cards[0]._id.toHexString()
+    const text = 'This should be the new text'
+
+    request(app)
+      .patch(`/cards/${id}`)
+      .send({
+        completed: true,
+        text
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.card.text).toBe(text)
+        expect(res.body.card.completed).toBe(true)
+        expect(res.body.card.completedAt).toBeA('number')
+      })
+      .end(done)
+  })
+
+  it('should clear completedAt when card is not completed', (done) => {
+    const id = cards[1]._id.toHexString()
+    const text = 'This should be the new text'
+
+    request(app)
+      .patch(`/cards/${id}`)
+      .send({
+        completed: false,
+        text
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.card.text).toBe(text)
+        expect(res.body.card.completed).toBe(false)
+        expect(res.body.card.completedAt).toNotExist()
+      })
       .end(done)
   })
 })

@@ -7,6 +7,7 @@ const { Card } = require('./models/card')
 const { User } = require('./models/user')
 
 const app = express()
+const port = process.env.PORT || 8080
 
 app.use(bodyParser.json())
 
@@ -49,7 +50,7 @@ app.get('/cards/:id', (req, res) => {
 })
 
 app.listen(8080, () => {
-  console.log('The magic happens on port 8080')
+  console.log(`The magic happens on port ${port}`)
 })
 
 module.exports = { app }

@@ -76,7 +76,7 @@ describe('GET /cards', () => {
   })
 })
 
-describe('GET /cards:id', () => {
+describe('GET /cards/:id', () => {
   it('should return card doc', (done) => {
     request(app)
       .get(`/cards/${cards[0]._id.toHexString()}`)
@@ -99,6 +99,45 @@ describe('GET /cards:id', () => {
     const id = 123
     request(app)
       .get(`/cards/${id}`)
+      .expect(404)
+      .end(done)
+  })
+})
+
+describe('DELETE /cards/:id', () => {
+  it('should remove a card', (done) => {
+    const id = cards[1]._id.toHexString()
+
+    request(app)
+      .delete(`/cards/${id}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.card._id).toBe(id)
+      })
+      .end((err, res) => {
+        if (err) {
+          return done(err)
+        }
+
+        Card.findById(id).then((card) => {
+          expect(card).toNotExist()
+          done()
+        }).catch((err) => done(err))
+      })
+  })
+
+  it('should return 404 if card not found', (done) => {
+    const id = new ObjectID().toHexString()
+
+    request(app)
+      .delete(`/cards/${id}`)
+      .expect(404)
+      .end(done)
+  })
+
+  it('should return 404 if object id is invalid', (done) => {
+    request(app)
+      .delete('/cards/123')
       .expect(404)
       .end(done)
   })

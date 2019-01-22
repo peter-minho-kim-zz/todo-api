@@ -61,7 +61,7 @@ app.delete('/cards/:id', (req, res) => {
       return res.status(404).send()
     }
 
-    res.send(card)
+    res.send({ card })
   }).catch((err) => {
     res.status(400).send()
   })

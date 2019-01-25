@@ -16,6 +16,7 @@ describe('POST /cards', () => {
 
     request(app)
       .post('/cards')
+      .set('x-auth', users[0].tokens[0].token)
       .send({ text })
       .expect(200)
       .expect((res) => {
@@ -37,6 +38,7 @@ describe('POST /cards', () => {
   it('should not create a card with invalid body data', (done) => {
     request(app) 
       .post('/cards')
+      .set('x-auth', users[0].tokens[0].token)
       .send({})
       .expect(400)
       .end((err, res) => {
@@ -56,9 +58,10 @@ describe('GET /cards', () => {
   it('should get all cards', (done) => {
     request(app)
       .get('/cards')
+      .set('x-auth', users[0].tokens[0].token)
       .expect(200)
       .expect((res) => {
-        expect(res.body.cards.length).toBe(2)
+        expect(res.body.cards.length).toBe(1)
       })
       .end(done)
   })
@@ -68,6 +71,7 @@ describe('GET /cards/:id', () => {
   it('should return card doc', (done) => {
     request(app)
       .get(`/cards/${cards[0]._id.toHexString()}`)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(200)
       .expect((res) => {
         expect(res.body.card.text).toBe(cards[0].text)
@@ -75,10 +79,19 @@ describe('GET /cards/:id', () => {
       .end(done)
   })
 
+  it('should not return card doc created by other user', (done) => {
+    request(app)
+      .get(`/cards/${cards[1]._id.toHexString()}`)
+      .set('x-auth', users[0].tokens[0].token)
+      .expect(404)
+      .end(done)
+  })
+
   it('should return 404 if card not found', (done) => {
     const id = new ObjectID()
     request(app)
       .get(`/cards/${id}`)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(404)
       .end(done)
   })
@@ -87,6 +100,7 @@ describe('GET /cards/:id', () => {
     const id = 123
     request(app)
       .get(`/cards/${id}`)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(404)
       .end(done)
   })
@@ -98,6 +112,7 @@ describe('DELETE /cards/:id', () => {
 
     request(app)
       .delete(`/cards/${id}`)
+      .set('x-auth', users[1].tokens[0].token)
       .expect(200)
       .expect((res) => {
         expect(res.body.card._id).toBe(id)
@@ -114,11 +129,31 @@ describe('DELETE /cards/:id', () => {
       })
   })
 
+  it('should not remove a card by different user', (done) => {
+    const id = cards[0]._id.toHexString()
+
+    request(app)
+      .delete(`/cards/${id}`)
+      .set('x-auth', users[1].tokens[0].token)
+      .expect(404)
+      .end((err, res) => {
+        if (err) {
+          return done(err)
+        }
+
+        Card.findById(id).then((card) => {
+          expect(card).toExist()
+          done()
+        }).catch((err) => done(err))
+      })
+  })
+
   it('should return 404 if card not found', (done) => {
     const id = new ObjectID().toHexString()
 
     request(app)
       .delete(`/cards/${id}`)
+      .set('x-auth', users[1].tokens[0].token)
       .expect(404)
       .end(done)
   })
@@ -126,18 +161,20 @@ describe('DELETE /cards/:id', () => {
   it('should return 404 if object id is invalid', (done) => {
     request(app)
       .delete('/cards/123')
+      .set('x-auth', users[1].tokens[0].token)
       .expect(404)
       .end(done)
   })
 })
 
 describe('PATCH /cards/:id', () => {
-  it('should updated the card', (done) => {
+  it('should update the card', (done) => {
     const id = cards[0]._id.toHexString()
     const text = 'This should be the new text'
 
     request(app)
       .patch(`/cards/${id}`)
+      .set('x-auth', users[0].tokens[0].token)
       .send({
         completed: true,
         text
@@ -151,12 +188,28 @@ describe('PATCH /cards/:id', () => {
       .end(done)
   })
 
+  it('should not update the card created by other user', (done) => {
+    const id = cards[0]._id.toHexString()
+    const text = 'This should be the new text'
+
+    request(app)
+      .patch(`/cards/${id}`)
+      .set('x-auth', users[1].tokens[0].token)
+      .send({
+        completed: true,
+        text
+      })
+      .expect(404)
+      .end(done)
+  })
+
   it('should clear completedAt when card is not completed', (done) => {
     const id = cards[1]._id.toHexString()
     const text = 'This should be the new text'
 
     request(app)
       .patch(`/cards/${id}`)
+      .set('x-auth', users[1].tokens[0].token)
       .send({
         completed: false,
         text
@@ -263,7 +316,7 @@ describe('POST /users/login', () => {
         }
 
         User.findById(users[1]._id).then((user) => {
-          expect(user.tokens[0]).toInclude({
+          expect(user.tokens[1]).toInclude({
             access: 'auth',
             token: res.headers['x-auth']
           })
@@ -289,7 +342,7 @@ describe('POST /users/login', () => {
         }
 
         User.findById(users[1]._id).then((user) => {
-          expect(user.tokens.length).toBe(0)
+          expect(user.tokens.length).toBe(1)
           done()
         }).catch((err) => done(err))
       })

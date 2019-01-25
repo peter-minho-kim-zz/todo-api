@@ -15,9 +15,10 @@ const port = process.env.PORT || 8080
 
 app.use(bodyParser.json())
 
-app.post('/cards', (req, res) => {
+app.post('/cards', authenticate, (req, res) => {
   const card = new Card({
-    text: req.body.text
+    text: req.body.text,
+    _creator: req.user._id
   })
 
   card.save().then((doc) => {
@@ -27,22 +28,27 @@ app.post('/cards', (req, res) => {
   })
 })
 
-app.get('/cards', (req, res) => {
-  Card.find().then((cards) => {
+app.get('/cards', authenticate, (req, res) => {
+  Card.find({
+    _creator: req.user._id
+  }).then((cards) => {
     res.send({ cards })
   }, (err) => {
     res.status(400).send(err)
   })
 })
 
-app.get('/cards/:id', (req, res) => {
+app.get('/cards/:id', authenticate, (req, res) => {
   const id = req.params.id
 
   if (!ObjectID.isValid(id)) {
     return res.status(404).send()
   }
 
-  Card.findById(id).then((card) => {
+  Card.findOne({
+    _id: id,
+    _creator: req.user._id
+  }).then((card) => {
     if (!card) {
       return res.status(404).send()
     }
@@ -53,14 +59,17 @@ app.get('/cards/:id', (req, res) => {
   })
 })
 
-app.delete('/cards/:id', (req, res) => {
+app.delete('/cards/:id', authenticate, (req, res) => {
   const id = req.params.id
 
   if (!ObjectID.isValid(id)) {
     return res.status(404).send()
   }
 
-  Card.findByIdAndRemove(id).then((card) => {
+  Card.findOneAndRemove({
+    _id: id,
+    _creator: req.user._id
+  }).then((card) => {
     if (!card) {
       return res.status(404).send()
     }
@@ -71,7 +80,7 @@ app.delete('/cards/:id', (req, res) => {
   })
 })
 
-app.patch('/cards/:id', (req, res) => {
+app.patch('/cards/:id', authenticate, (req, res) => {
   const id = req.params.id
   const body = _.pick(req.body, ['text', 'completed'])
 
@@ -86,7 +95,7 @@ app.patch('/cards/:id', (req, res) => {
     body.completedAt = null
   }
 
-  Card.findByIdAndUpdate(id, {$set: body}, {new: true}).then((card) => {
+  Card.findOneAndUpdate({ _id: id, _creator: req.user._id }, { $set: body }, { new: true }).then((card) => {
     if (!card) {
       return res.status(404).send()
     }
